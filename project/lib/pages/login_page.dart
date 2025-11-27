@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'feed_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,9 +21,14 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Logged in (demo)')));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const FeedPage()),
+      );
     }
   }
 
