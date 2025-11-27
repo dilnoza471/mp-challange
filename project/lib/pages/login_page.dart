@@ -17,18 +17,27 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      );
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text.trim(),
+        );
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Logged in (demo)')));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const FeedPage()),
-      );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Logged in')));
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const FeedPage()),
+        );
+      } catch (e) {
+        print("LOGIN ERROR: $e");
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      }
     }
   }
 

@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_page.dart';
 
@@ -18,35 +18,42 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscure = true;
 
   Future<void> _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final name = _nameCtrl.text.trim();
-      final email = _emailCtrl.text.trim();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text.trim();
+
+    try {
       final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: email,
-            password: _passwordCtrl.text,
-          );
+          .createUserWithEmailAndPassword(email: email, password: password);
+
       final user = credential.user;
       if (user == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Registration failed')));
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
         return;
       }
-      final uid = user.uid;
 
-      // now save the name to Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'name': name,
         'email': email,
+        'createdAt': DateTime.now(),
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registered $name ($email) — demo')),
-      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registered $name')));
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     }
   }
 
@@ -74,7 +81,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Full name'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Name required';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Name required';
+                    }
                     return null;
                   },
                 ),
@@ -84,8 +93,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email required';
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
+                    final text = v?.trim() ?? '';
+                    if (text.isEmpty) return 'Email required';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(text)) {
                       return 'Enter a valid email';
                     }
                     return null;
@@ -105,8 +115,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   obscureText: _obscure,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password required';
-                    if (v.length < 6) return 'At least 6 characters';
+                    if (v == null || v.isEmpty) {
+                      return 'Password required';
+                    }
+                    if (v.length < 6) {
+                      return 'At least 6 characters';
+                    }
                     return null;
                   },
                 ),
